@@ -26,6 +26,15 @@ lose_bg = image.load("images/lose_bg.png").convert()
 win_bg = transform.scale(win_bg, (WIDTH, HEIGHT))
 lose_bg = transform.scale(lose_bg, (WIDTH, HEIGHT))
 
+# завантажуємо картинки для ракеток та м'яча
+# paddle_left_img = image.load("assets/paddle_left.png").convert_alpha()
+# paddle_right_img = image.load("assets/paddle_right.png").convert_alpha()
+# ball_img = image.load("assets/ball.png").convert_alpha()
+# # трансформуємо завантажені картинки відповідно до задуманих розмірів
+# paddle_left_img = transform.scale(paddle_left_img, (20, 100))
+# paddle_right_img = transform.scale(paddle_right_img, (20, 100))
+# ball_img = transform.scale(ball_img, (20, 20))
+
 # ініціалізація звукової системи
 mixer.init()
 wall_sound = mixer.Sound("sounds/wall_hit.mp3")        # звук удару об стіну
@@ -38,7 +47,7 @@ def connect_to_server():
     while True:
         try:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # створюємо сокет
-            client.connect(('localhost', 8081))  # підключення до сервера
+            client.connect(('localhost', 8082))  # підключення до сервера
 
             buffer = ""        # буфер для отриманих даних
             game_state = {}    # стан гри
@@ -134,6 +143,14 @@ while True:
         draw.rect(screen, (255, 0, 255),(WIDTH - 40, game_state['paddles']['1'], 20, 100))
         # мʼяч
         draw.circle(screen, (255, 255, 255),(game_state['ball']['x'], game_state['ball']['y']), 10)
+
+        # # ліва ракетка
+        # screen.blit(paddle_left_img, (20, game_state['paddles']['0']))
+        # # права ракетка
+        # screen.blit(paddle_right_img, (WIDTH - 40, game_state['paddles']['1']))
+        # # м’яч (важливо: відняти радіус, щоб центр співпадав)
+        # screen.blit(ball_img, (game_state['ball']['x'] - 10, game_state['ball']['y'] - 10))
+
         # рахунок
         score_text = font_main.render(f"{game_state['scores'][0]} : {game_state['scores'][1]}",True, (255, 0, 0))
         screen.blit(score_text, (WIDTH // 2 - 25, 20))

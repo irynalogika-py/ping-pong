@@ -16,7 +16,7 @@ COUNTDOWN_START = 3
 
 
 class GameServer:
-    def __init__(self, host='localhost', port=8081):
+    def __init__(self, host='localhost', port=8082):
         # Створюємо TCP-сокет
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
