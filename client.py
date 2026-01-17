@@ -11,22 +11,25 @@ screen = display.set_mode((WIDTH, HEIGHT))  # створення вікна
 clock = time.Clock()  # таймер FPS
 display.set_caption("Пінг-Понг")  # заголовок вікна
 
+# завантажуємо картинку для очікування гравців
+start_background = image.load("images/start_bg.jpg").convert()
+start_background = transform.scale(start_background, (WIDTH, HEIGHT))
+
 # завантажуємо картинку для фону
-main_background = image.load("images/b1.jpg").convert()
+main_background = image.load("images/main_bg.jpg").convert()
 main_background = transform.scale(main_background, (WIDTH, HEIGHT))
-bg_y = 0
-bg_speed = 0.5  # швидкість руху фону
 
 #  фон для перемоги та поразки
-win_bg = image.load("images/win_bg.png").convert()
+win_bg = image.load("images/win_bg.jpg").convert()
 lose_bg = image.load("images/lose_bg.png").convert()
+
 win_bg = transform.scale(win_bg, (WIDTH, HEIGHT))
 lose_bg = transform.scale(lose_bg, (WIDTH, HEIGHT))
 
-mixer.init()  # ініціалізація звукової системи
-
-wall_sound = mixer.Sound("wall_hit.wav")        # звук удару об стіну
-platform_sound = mixer.Sound("platform_hit.wav")  # звук удару об ракетку
+# ініціалізація звукової системи
+mixer.init()
+wall_sound = mixer.Sound("sounds/wall_hit.mp3")        # звук удару об стіну
+platform_sound = mixer.Sound("sounds/platform_hit.mp3")  # звук удару об ракетку
 wall_sound.set_volume(0.5)        # гучність (0.0 – 1.0)
 platform_sound.set_volume(0.6)
 
@@ -82,17 +85,18 @@ my_id, game_state, buffer, client = connect_to_server()
 Thread(target=receive, daemon=True).start()
 
 while True:
+    screen.blit(start_background, (0, 0))
     for e in event.get():
         if e.type == QUIT:
             exit()  # вихід з гри
 
     # якщо йде зворотний відлік
     if "countdown" in game_state and game_state["countdown"] > 0:
-        screen.fill((0, 0, 0))
+        # screen.fill((0, 0, 0))
+        screen.blit(start_background, (0, 0))
 
         countdown_text = font.Font(None, 72).render(
-            str(game_state["countdown"]), True, (255, 255, 255)
-        )
+                str(game_state["countdown"]), True, (255, 255, 255))
         screen.blit(countdown_text, (WIDTH // 2 - 20, HEIGHT // 2 - 30))
         display.update()
         continue  # не малюємо гру
@@ -122,32 +126,16 @@ while True:
     # якщо є стан гри — малюємо
     if game_state:
         # screen.fill((30, 30, 30))
-        # screen.blit(background, (0, 0), )  # ← фон
-
-        bg_y += bg_speed
-        if bg_y >= HEIGHT:
-            bg_y = 0
-
-        screen.blit(main_background, (0, bg_y))
-        screen.blit(main_background, (0, bg_y - HEIGHT))
+        screen.blit(main_background, (0, 0), )  # ← фон
 
         # ліва ракетка
-        draw.rect(screen, (0, 255, 0),
-                  (20, game_state['paddles']['0'], 20, 100))
-
+        draw.rect(screen, (0, 255, 0),(20, game_state['paddles']['0'], 20, 100))
         # права ракетка
-        draw.rect(screen, (255, 0, 255),
-                  (WIDTH - 40, game_state['paddles']['1'], 20, 100))
-
+        draw.rect(screen, (255, 0, 255),(WIDTH - 40, game_state['paddles']['1'], 20, 100))
         # мʼяч
-        draw.circle(screen, (255, 255, 255),
-                    (game_state['ball']['x'], game_state['ball']['y']), 10)
-
+        draw.circle(screen, (255, 255, 255),(game_state['ball']['x'], game_state['ball']['y']), 10)
         # рахунок
-        score_text = font_main.render(
-            f"{game_state['scores'][0]} : {game_state['scores'][1]}",
-            True, (255, 255, 255)
-        )
+        score_text = font_main.render(f"{game_state['scores'][0]} : {game_state['scores'][1]}",True, (255, 0, 0))
         screen.blit(score_text, (WIDTH // 2 - 25, 20))
 
         # події звуку
@@ -158,7 +146,7 @@ while True:
 
     else:
         # якщо ще немає даних
-        waiting_text = font_main.render("Очікування гравців...", True, (255, 255, 255))
+        waiting_text = font_main.render("Очікування гравців...", True, (0, 0, 255))
         screen.blit(waiting_text, (WIDTH // 2 - 120, HEIGHT // 2))
 
     display.update()
@@ -173,7 +161,6 @@ while True:
 
     # керування ракеткою мишкою
     mouse_y = mouse.get_pos()[1]  # поточна Y-координата миші
-
     # поточна позиція нашої ракетки з сервера
     if game_state and 'paddles' in game_state:
         paddle_y = game_state['paddles'][str(my_id)] + 50  # центр ракетки
@@ -182,4 +169,3 @@ while True:
             client.send(b"UP")  # мишка вище — рухаємося вгору
         elif mouse_y > paddle_y + 5:
             client.send(b"DOWN")  # мишка нижче — рухаємося вниз
-
