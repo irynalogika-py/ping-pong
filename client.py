@@ -1,7 +1,10 @@
-from pygame import *          # бібліотека для гри (вікно, події, графіка)
-import socket                 # для зʼєднання з сервером
-import json                   # для розбору даних від сервера
+from pygame import *  # бібліотека для гри (вікно, події, графіка)
+import socket  # для зʼєднання з сервером
+import json  # для розбору даних від сервера
 from threading import Thread  # потік для прийому даних
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # розміри вікна
 WIDTH, HEIGHT = 800, 600
@@ -9,9 +12,10 @@ WIDTH, HEIGHT = 800, 600
 init()  # ініціалізація pygame
 screen = display.set_mode((WIDTH, HEIGHT))  # створення вікна
 clock = time.Clock()  # таймер FPS
-display.set_caption("Пінг-Понг")  # заголовок вікна
+display.set_caption("Ping-Pong")  # заголовок вікна
 
 # завантажуємо картинку для очікування гравців
+# start_background = image.load(os.path.join(BASE_DIR, "images", "start_bg.jpg")).convert()
 start_background = image.load("images/start_bg.jpg").convert()
 start_background = transform.scale(start_background, (WIDTH, HEIGHT))
 
@@ -27,20 +31,21 @@ win_bg = transform.scale(win_bg, (WIDTH, HEIGHT))
 lose_bg = transform.scale(lose_bg, (WIDTH, HEIGHT))
 
 # завантажуємо картинки для ракеток та м'яча
-# paddle_left_img = image.load("assets/paddle_left.png").convert_alpha()
-# paddle_right_img = image.load("assets/paddle_right.png").convert_alpha()
-# ball_img = image.load("assets/ball.png").convert_alpha()
-# # трансформуємо завантажені картинки відповідно до задуманих розмірів
-# paddle_left_img = transform.scale(paddle_left_img, (20, 100))
-# paddle_right_img = transform.scale(paddle_right_img, (20, 100))
-# ball_img = transform.scale(ball_img, (20, 20))
+paddle_left_img = image.load("images/paddle1.png").convert_alpha()
+paddle_right_img = image.load("images/paddle2.png").convert_alpha()
+ball_img = image.load("images/ball.png").convert_alpha()
+# трансформуємо завантажені картинки відповідно до задуманих розмірів
+paddle_left_img = transform.scale(paddle_left_img, (30, 100))
+paddle_right_img = transform.scale(paddle_right_img, (30, 100))
+ball_img = transform.scale(ball_img, (40, 40))
 
 # ініціалізація звукової системи
 mixer.init()
-wall_sound = mixer.Sound("sounds/wall_hit.mp3")        # звук удару об стіну
+wall_sound = mixer.Sound("sounds/wall_hit.mp3")  # звук удару об стіну
 platform_sound = mixer.Sound("sounds/platform_hit.mp3")  # звук удару об ракетку
-wall_sound.set_volume(0.5)        # гучність (0.0 – 1.0)
+wall_sound.set_volume(0.5)  # гучність (0.0 – 1.0)
 platform_sound.set_volume(0.6)
+
 
 def connect_to_server():
     # пробуємо підключитися, поки не вийде
@@ -49,8 +54,8 @@ def connect_to_server():
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # створюємо сокет
             client.connect(('localhost', 8082))  # підключення до сервера
 
-            buffer = ""        # буфер для отриманих даних
-            game_state = {}    # стан гри
+            buffer = ""  # буфер для отриманих даних
+            game_state = {}  # стан гри
 
             # сервер надсилає ID гравця (0 або 1)
             my_id = int(client.recv(24).decode())
@@ -67,21 +72,21 @@ def receive():
     while not game_over:
         try:
             data = client.recv(1024).decode()  # отримуємо дані
-            buffer += data                     # додаємо в буфер
+            buffer += data  # додаємо в буфер
 
             # сервер надсилає пакети, розділені переносом рядка
             while "\n" in buffer:
                 packet, buffer = buffer.split("\n", 1)
 
-                if packet.strip():             # якщо пакет не порожній
+                if packet.strip():  # якщо пакет не порожній
                     game_state = json.loads(packet)  # перетворюємо JSON у dict
         except:
             game_state["winner"] = -1  # сервер зник
             break
 
 
-font_win = font.Font(None, 72)   # великий шрифт (перемога)
-font_main = font.Font(None, 36)  # основний шрифт
+font_win = font.Font("fonts/Pacifico-Regular.ttf", 70)  # великий шрифт (перемога)
+font_main = font.Font("fonts/RubikGemstones-Regular.ttf", 40)  # основний шрифт
 
 game_over = False
 winner = None
@@ -105,7 +110,7 @@ while True:
         screen.blit(start_background, (0, 0))
 
         countdown_text = font.Font(None, 72).render(
-                str(game_state["countdown"]), True, (255, 255, 255))
+            str(game_state["countdown"]), True, (255, 255, 255))
         screen.blit(countdown_text, (WIDTH // 2 - 20, HEIGHT // 2 - 30))
         display.update()
         continue  # не малюємо гру
@@ -122,11 +127,11 @@ while True:
         else:
             screen.blit(lose_bg, (0, 0))
 
-        text = "Ти переміг!" if you_win else "Пощастить наступним разом!"
-        win_text = font_win.render(text, True, (255, 215, 0))
+        text = "Ти переміг!" if you_win else ""
+        win_text = font_win.render(text, True, (0, 255, 0))
         screen.blit(win_text, win_text.get_rect(center=(WIDTH // 2, HEIGHT // 2)))
 
-        restart_text = font_win.render("К - рестарт", True, (255, 215, 0))
+        restart_text = font_win.render("", True, (0, 255, 0))
         screen.blit(restart_text, restart_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 120)))
 
         display.update()
@@ -138,21 +143,21 @@ while True:
         screen.blit(main_background, (0, 0), )  # ← фон
 
         # ліва ракетка
-        draw.rect(screen, (0, 255, 0),(20, game_state['paddles']['0'], 20, 100))
+        # draw.rect(screen, () , (20, game_state['paddles']['0'], 20, 100))
         # права ракетка
-        draw.rect(screen, (255, 0, 255),(WIDTH - 40, game_state['paddles']['1'], 20, 100))
+        # draw.rect(screen, (255, 0, 255), (WIDTH - 40, game_state['paddles']['1'], 20, 100))
         # мʼяч
-        draw.circle(screen, (255, 255, 255),(game_state['ball']['x'], game_state['ball']['y']), 10)
+        # draw.circle(screen, (255, 255, 255), (game_state['ball']['x'], game_state['ball']['y']), 10)
 
-        # # ліва ракетка
-        # screen.blit(paddle_left_img, (20, game_state['paddles']['0']))
-        # # права ракетка
-        # screen.blit(paddle_right_img, (WIDTH - 40, game_state['paddles']['1']))
-        # # м’яч (важливо: відняти радіус, щоб центр співпадав)
-        # screen.blit(ball_img, (game_state['ball']['x'] - 10, game_state['ball']['y'] - 10))
+        # ліва ракетка
+        screen.blit(paddle_left_img, (20, game_state['paddles']['0'], 20, 100))
+        # права ракетка
+        screen.blit(paddle_right_img, (WIDTH - 40, game_state['paddles']['1'], 20, 100))
+        # м’яч (важливо: відняти радіус, щоб центр співпадав)
+        screen.blit(ball_img, (game_state['ball']['x'] - 10, game_state['ball']['y'] - 10))
 
-        # рахунок
-        score_text = font_main.render(f"{game_state['scores'][0]} : {game_state['scores'][1]}",True, (255, 0, 0))
+        # # рахунок
+        score_text = font_main.render(f"{game_state['scores'][0]} : {game_state['scores'][1]}", True, (255, 0, 0))
         screen.blit(score_text, (WIDTH // 2 - 25, 20))
 
         # події звуку
@@ -164,7 +169,7 @@ while True:
     else:
         # якщо ще немає даних
         waiting_text = font_main.render("Очікування гравців...", True, (0, 0, 255))
-        screen.blit(waiting_text, (WIDTH // 2 - 120, HEIGHT // 2))
+        screen.blit(waiting_text, (WIDTH // 2 - 150, HEIGHT // 2))
 
     display.update()
     clock.tick(60)  # обмеження FPS
